@@ -111,6 +111,7 @@ class VideoChat(Blip2Base):
         print('Loading LLAMA')
         self.llama_tokenizer = LlamaTokenizer.from_pretrained(llama_model_path, use_fast=False)
         self.llama_tokenizer.pad_token = self.llama_tokenizer.eos_token
+        #dummy_tensor = torch.zeros(int(2.5*10**9)).to('cuda')
 
         if self.low_resource:
             self.llama_model = LlamaForCausalLM.from_pretrained(
@@ -123,22 +124,26 @@ class VideoChat(Blip2Base):
             self.llama_model = LlamaForCausalLM.from_pretrained(
                 llama_model_path,
                 torch_dtype=torch.float16,
+                device_map="auto",
+                # max_memory={0: "5GIB", "cpu": "15GIB"}
             )
-
+        #del dummy_tensor
+        #torch.cuda.empty_cache()
+        print(self.llama_model.hf_device_map)
         print("freeze LLAMA")
         for name, param in self.llama_model.named_parameters():
-            param.requires_grad = False
+           param.requires_grad = False
         print('Loading LLAMA Done')
 
         self.llama_proj = nn.Linear(
-            self.Qformer.config.hidden_size, self.llama_model.config.hidden_size
+           self.Qformer.config.hidden_size, self.llama_model.config.hidden_size
         )
         self.max_txt_len = max_txt_len
 
         # load weights of VideoChat
         if videochat_model_path:
             print(f"Load VideoChat from: {videochat_model_path}")
-            ckpt = torch.load(videochat_model_path, map_location="cpu")
+            ckpt = torch.load(videochat_model_path, map_location="cuda")
             msg = self.load_state_dict(ckpt['model'], strict=False)
             print(msg)
 

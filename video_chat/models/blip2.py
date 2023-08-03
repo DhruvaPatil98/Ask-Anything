@@ -97,7 +97,7 @@ class Blip2Base(nn.Module):
 
     def load_from_pretrained(self, model_path):
         if model_path is not None and os.path.isfile(model_path):
-            checkpoint = torch.load(model_path, map_location="cpu")
+            checkpoint = torch.load(model_path, map_location="cuda")
         else:
             raise RuntimeError("checkpoint url or path is invalid")
 

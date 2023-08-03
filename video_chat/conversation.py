@@ -61,6 +61,7 @@ class Chat:
                repetition_penalty=1.0, length_penalty=1, temperature=1.0):
         conv.messages.append([conv.roles[1], None])
         embs = self.get_context_emb(conv, img_list)
+        torch.cuda.empty_cache()
         outputs = self.model.llama_model.generate(
             inputs_embeds=embs,
             max_new_tokens=max_new_tokens,
@@ -147,6 +148,7 @@ class Chat:
         ])
         msg = "Received."
         # self.conv.append_message(self.conv.roles[1], msg)
+        torch.cuda.empty_cache()
         return msg, img_list, conv
     
     def upload_img(self, image, conv, img_list):

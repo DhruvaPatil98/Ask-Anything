@@ -583,7 +583,7 @@ def create_eva_vit_g(
         gmhra_dropout=gmhra_dropout, 
     )  
     if vit_model_path is not None and os.path.isfile(vit_model_path):
-        state_dict = torch.load(vit_model_path, map_location="cpu")    
+        state_dict = torch.load(vit_model_path, map_location="cuda")    
         print(f"Load ViT model from: {vit_model_path}")
         interpolate_pos_embed(model, state_dict)
         msg = load_state_dict(model, state_dict, strict=False)

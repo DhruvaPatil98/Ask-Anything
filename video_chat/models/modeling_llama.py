@@ -98,6 +98,9 @@ class LlamaRotaryEmbedding(torch.nn.Module):
             freqs = torch.einsum("i,j->ij", t, self.inv_freq)
             # Different from paper, but it uses a different permutation in order to obtain the same calculation
             emb = torch.cat((freqs, freqs), dim=-1).to(x.device)
+            del freqs
+            del t
+            torch.cuda.empty_cache()
             self.register_buffer("cos_cached", emb.cos()[None, None, :, :], persistent=False)
             self.register_buffer("sin_cached", emb.sin()[None, None, :, :], persistent=False)
         return (
@@ -184,6 +187,7 @@ class LlamaAttention(nn.Module):
         if past_key_value is not None:
             kv_seq_len += past_key_value[0].shape[-2]
         cos, sin = self.rotary_emb(value_states, seq_len=kv_seq_len)
+        torch.cuda.empty_cache()
         query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin, position_ids)
         # [bsz, nh, t, hd]
 
@@ -196,6 +200,7 @@ class LlamaAttention(nn.Module):
 
         attn_weights = torch.matmul(query_states, key_states.transpose(2, 3)) / math.sqrt(self.head_dim)
 
+        torch.cuda.empty_cache()
         if attn_weights.size() != (bsz, self.num_heads, q_len, kv_seq_len):
             raise ValueError(
                 f"Attention weights should be of size {(bsz * self.num_heads, q_len, kv_seq_len)}, but is"
@@ -210,6 +215,7 @@ class LlamaAttention(nn.Module):
             attn_weights = attn_weights + attention_mask
             attn_weights = torch.max(attn_weights, torch.tensor(torch.finfo(attn_weights.dtype).min))
 
+        torch.cuda.empty_cache()
         # upcast attention to fp32
         attn_weights = nn.functional.softmax(attn_weights, dim=-1, dtype=torch.float32).to(query_states.dtype)
         attn_output = torch.matmul(attn_weights, value_states)
@@ -227,7 +233,7 @@ class LlamaAttention(nn.Module):
 
         if not output_attentions:
             attn_weights = None
-
+        torch.cuda.empty_cache()
         return attn_output, attn_weights, past_key_value
 
 

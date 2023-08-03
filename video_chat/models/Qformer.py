@@ -83,6 +83,7 @@ class BertEmbeddings(nn.Module):
         query_embeds=None,
         past_key_values_length=0,
     ):
+        torch.cuda.empty_cache()
         if input_ids is not None:
             seq_length = input_ids.size()[1]
         else:
@@ -106,6 +107,7 @@ class BertEmbeddings(nn.Module):
 
         embeddings = self.LayerNorm(embeddings)
         embeddings = self.dropout(embeddings)
+        torch.cuda.empty_cache()
         return embeddings
 
 
